@@ -1,0 +1,121 @@
+---
+title: "Transporte en Argentina"
+subtitle: "Trabajo final de la Materia: Visualización de la información"
+author: "Bardauil Ariana"
+date: "`r Sys.Date()`"
+output: 
+  html_document: 
+    toc: true
+    toc_float: true
+    collapsed: true
+    number_sections: true
+    code_download: true
+    css: hoja_estilo_unab.css
+    theme: yeti
+    code_folding: hide 
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, error = FALSE, waring = FALSE)
+
+library(tidyverse)
+library(janitor)
+library(gt)
+library(readr)
+library(lubridate)
+
+options(scipen=999)
+```
+
+# Introducción
+
+El trabajo se realiza con el dataset de [Cantidad de transacciones SUBE (usos) por día en 2022](https://www.datos.gob.ar/dataset/transporte-sube---cantidad-transacciones-usos-por-fecha/archivo/transporte_93410ab1-88df-457a-8e24-262d41211f9c) del Ministerio de Transporte. Tal como expresa el nombre de la base, posee información de las trasacciones realizadas por las tarjetas SUBE por día durante el año 2022. Las variables que contiene son:
+
+| Columna          | Tipo de dato            | Descripción                                                                                                                                                         |
+|------------------|-------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| dia_transporte   | Fecha ISO-8601 (date)   | Día de transporte informado                                                                                                                                         |
+| nombre_empresa   | Texto (string)          | Nombre de la empresa de transporte                                                                                                                                  |
+| linea            | Texto (string)          | Descripción de la línea                                                                                                                                             |
+| amba             | Texto (string)          | SI/NO                                                                                                                                                               |
+| tipo_transporte  | Texto (string)          | colectivo, tren, subte, lanchas                                                                                                                                     |
+| jurisdiccion     | Texto (string)          | tipo de jurisdicción de la línea (NACIONAL, PROVINCIAL, MUNICIPAL): en caso de subte queda vacío.                                                                   |
+| provincia        | Texto (string)          | nombre de la provincia, en caso de ser jurisdicción provincial o municipal. Si es jurisdicción nacional figura JN. En caso de subte queda vacío                     |
+| municipio        | Texto (string)          | nombre del municipio, en caso de ser jurisdicción municipal. SI es jurisdicción nacional o provincial figura SD o SN respectivamente. En caso de subte queda vacío  |
+| cantidad         | Número entero (integer) | cantidad de transacciones de uso / check-in / checkout sin checkin / Venta de boletos, neteadas de eventuales reversas                                              |
+| dato_preliminar  | Texto (string)          | SI/NO                                                                                                                                                               |
+
+: Campos del dataset
+
+## Análisis Exploratorio
+
+```{r}
+df <- read_csv("dat-ab-usos-2022.csv") %>% 
+  clean_names() 
+
+df %>% 
+  skimr::skim()
+```
+
+Como puede observarse en esta síntesis de los valores de las variables: Se trata de una base con diez columnas y 415.276 registros. El campo "**cantidad**" es el único con valores numéricos. Este expresa la frecuencia por día de transacciones con la tarjeta SUBE. Las variables jurisdicción, provincia y municipio son las únicas que contienen valores nulos, pero como veremos a continuación estas corresponden a **Ciudad Autónoma de Buenos Aires**
+
+```{r}
+df %>% 
+  filter(is.na(provincia)) %>% 
+  group_by(linea) %>% 
+  summarise(N = sum(cantidad)) %>% 
+    gt() %>% 
+  tab_header(
+    title = md("**Datos vacios**")) %>%
+  cols_label(
+    linea = "Linea de transporte",
+    N = "Cantidad de transacciones"
+  ) %>% 
+  tab_source_note(
+    source_note = "Fuente: Ministerio de Transporte"
+  ) %>% 
+  fmt_number(columns = N,
+             sep_mark = ".",
+             decimals = 0,
+             dec_mark = ","
+             )
+
+
+
+```
+
+```{r}
+
+df_reducido <- df %>%
+  mutate(mes = month(dia_transporte)) %>% 
+  filter(mes %in% (11:12)) 
+```
+
+En la siguiente tabla se observan las frecuencias por provincia. Entre ellas, se encuentra "JN" que no sabemos bien a qué refiere. Se decidió quedarnos solo con lo perteneciente a AMBA
+
+```{r}
+df %>% 
+  group_by(provincia) %>% 
+  summarise(N = sum(cantidad)) %>% 
+    gt() %>% 
+  tab_header(
+    title = md("**Transacciones por Provincia**")) %>%
+  cols_label(
+    provincia = "Provincia",
+    N = "Cantidad de transacciones"
+  ) %>% 
+  tab_source_note(
+    source_note = "Fuente: Ministerio de Transporte"
+  ) %>% 
+  fmt_number(columns = N,
+             sep_mark = ".",
+             decimals = 0,
+             dec_mark = ","
+             )
+  
+#filtramos el dataset
+df_amba <- df %>% 
+  filter(amba == 'SI')
+
+
+
+```

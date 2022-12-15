@@ -1,0 +1,13 @@
+﻿
+/*----------LOGO arriba del TOC---------*/
+
+#TOC::before {
+  content: "";
+  display: block;
+  height: 80px;
+  margin: 20px 20px 40px 20px;
+  background-image: url("https://pbs.twimg.com/profile_images/1104013134896025601/zr6MKYCz_400x400.png");
+  background-size: contain;
+  background-position: center center;
+  background-repeat: no-repeat;
+}
