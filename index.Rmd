@@ -85,9 +85,6 @@ df %>%
 
 ```{r}
 
-df_reducido <- df %>%
-  mutate(mes = month(dia_transporte)) %>% 
-  filter(mes %in% (11:12)) 
 ```
 
 En la siguiente tabla se observan las frecuencias por provincia. Entre ellas, se encuentra "JN" que no sabemos bien a qué refiere. Se decidió quedarnos solo con lo perteneciente a AMBA
@@ -117,5 +114,51 @@ df_amba <- df %>%
   filter(amba == 'SI')
 
 
+```
 
+```{r}
+
+```
+
+## Pregunta 1: ¿Qué lineas municipales de La Matanza más se frecuentan?
+
+```{r}
+
+df_amba %>%
+  mutate(dia = wday(dia_transporte)) %>% 
+  group_by(dia,tipo_transporte) %>% 
+  summarise(N = (sum(cantidad)/1000000)) %>% 
+  ggplot(aes(x = reorder(dia, dia), y = N)) +
+ geom_col(fill = "#FF69B4") +
+ labs(title = "Cantidad de transacciones por tipo transporte por dia - 2022",
+      subtitle = "En millones de transacciones", caption = "Fuente: Min de transporte") +
+ coord_flip() +
+ theme_minimal() +
+ theme(plot.title = element_text(face = "bold", hjust = 0.5), plot.subtitle = element_text(hjust = 0.5)) +
+  facet_wrap(~tipo_transporte) +
+  ylab(" ")+
+  xlab(" ") 
+
+```
+
+```{r}
+df_matanza <- df_amba %>% 
+  filter(municipio == "LA MATANZA")
+
+
+
+df_matanza %>% 
+  group_by(linea) %>% 
+  summarise(N = sum(cantidad),
+            N = (N/100000)) %>% 
+  ggplot(aes(reorder(linea, N),N,fill = linea)) +
+  geom_col() + 
+  coord_flip() + scale_fill_brewer(palette = "Accent", guide="none") +
+   labs(title = "Transacciones en lineas de La Matanza 2022",
+       subtitle = "En millones de transacciones",
+       caption = "Fuente: Ministerio de Transporte",
+       x = " ",
+       y = " ",
+       color = "") +
+  theme_classic() 
 ```
